@@ -3,6 +3,7 @@
   {:git/url "https://github.com/robertluo/pullable.git"
    :tag     "v0.1.2"
    :sha     "ccb0bb4a82e539f50f1e783852d99ca36ff1a0e5"}
+  byte-streams              {:mvn/version "0.2.4"}
   com.cognitect/transit-clj {:mvn/version "1.0.324"}}
  :aliases   
  {:dev
