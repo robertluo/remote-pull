@@ -30,6 +30,7 @@ jobs:
     - uses: actions/cache@v2
       with:
         path: |
+          .cpcache/
           ~/.m2
           ~/.gitlabs
         key: default-build
