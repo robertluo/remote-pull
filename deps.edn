@@ -1,10 +1,15 @@
-{:deps      {robertluo/pullable        {:git/url "git@github.com:robertluo/pullable.git"
-                                        :tag     "v0.1.2"
-                                        :sha     "ccb0bb4a82e539f50f1e783852d99ca36ff1a0e5"}
-             aleph                     {:mvn/version "0.4.6"}
-             com.cognitect/transit-clj {:mvn/version "1.0.324"}}
- :aliases   {:dev  {:extra-paths ["test"]},
-             :test {:extra-deps {lambdaisland/kaocha {:git/url "https://github.com/lambdaisland/kaocha.git",
-                                                      :tag     "v1.0.632",
-                                                      :sha     "96518cf42d722d668d363942070a69f74d5242cd"}},
-                    :main-opts  ["-m" "kaocha.runner"]}}}
+{:deps      
+ {robertluo/pullable
+  {:git/url "git@github.com:robertluo/pullable.git"
+   :tag     "v0.1.2"
+   :sha     "ccb0bb4a82e539f50f1e783852d99ca36ff1a0e5"}
+  aleph                     {:mvn/version "0.4.6"}
+  com.cognitect/transit-clj {:mvn/version "1.0.324"}}
+ :aliases   
+ {:dev
+  {:extra-paths ["test"]}
+  :test
+  {:extra-deps 
+   {lambdaisland/kaocha           {:mvn/version "1.0.632"}
+    lambdaisland/kaocha-cloverage {:mvn/version "1.0-45"}}
+   :main-opts  ["-m" "kaocha.runner"]}}}
