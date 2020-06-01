@@ -3,7 +3,6 @@
    [robertluo.pullable :refer [pull]]
    [clojure.edn :as edn]
    [byte-streams :as bs]
-   [aleph.http :as http]
    [cognitect.transit :as transit]))
 
 (defprotocol Formatter
@@ -59,15 +58,14 @@
 ;; Client
 
 (defn remote-pull
-  ([content-type url pattern]
-   (let [headers   {:headers {"content-type" content-type}}
-         formatter (create-formatter headers)
-         resp      (some->> (http/post url (merge headers {:body (-encode formatter pattern)}))
-                            deref)
-         status    (:status resp)]
-     (if (= status 200)
-       (some->> (:body resp) (-decode formatter))
-       (throw (ex-info "Request error" {:resp resp}))))))
+  [post-fn pattern content-type]
+  (let [headers   {:headers {"content-type" content-type}}
+        formatter (create-formatter headers)
+        resp      (post-fn (merge headers {:body (-encode formatter pattern)}))
+        status    (:status resp)]
+    (if (= status 200)
+      (some->> (:body resp) (-decode formatter))
+      (throw (ex-info "Request error" {:resp resp})))))
 
 ;;==========================
 ;; Implementation of formatters
