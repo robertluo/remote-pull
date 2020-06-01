@@ -18,7 +18,7 @@
 (deftest with-pull
   (let [handler (sut/with-pull (constantly {:foo "bar"}) :body-params)]
     (testing "pull with pattern returns result"
-      (is (= {:foo "bar"}
+      (is (= {:status 200 :body {:foo "bar"}}
              (handler {:body-params :foo}))))
     (testing "if no pattern, throw exception"
       (is (thrown? clojure.lang.ExceptionInfo (handler {}))))))
@@ -43,12 +43,3 @@
       (is (= data (->> data (sut/-encode edn) (sut/-decode edn)))))
     (testing "transit json round trip"
       (is (= data (->> data (sut/-encode transit-json) (sut/-decode transit-json)))))))
-
-(deftest with-pull
-  (let [model   {:foo "bar"
-                 :baz [{:int 8} {:int 9}]}
-        handler (sut/with-pull (constantly model) :pattern)]
-    (testing "handler using model to pull data and returns a ring repsonse"
-      (is (= {:status 200
-              :body   {:foo "bar"}}
-             (handler {:pattern [:foo]}))))))
