@@ -34,6 +34,14 @@
     (is (= {}
            ((sut/with-exception identity) {})))))
 
+(deftest async-wrapper
+  (let [handler identity
+        wrapper (sut/async-wrapper handler)]
+    (testing "create an async ring handler"
+      (is (= ::OK (wrapper ::OK identity ::NOUSE))))
+    (testing "create a default sync ring handler"
+      (is (= ::OK (wrapper ::OK))))))
+
 (deftest remote-pull
   (testing "when remote returns 200, return its body decoded"
     (is (= :ok

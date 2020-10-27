@@ -11,11 +11,12 @@
    
    model-maker is a function takes ring request as its argument, 
    returns a map as pullable model."
-  [model-maker]
-  (-> model-maker
-      (impl/with-pull :body-params)
-      impl/with-format
-      impl/with-exception))
+  ([model-maker]
+   (-> model-maker
+       (impl/with-pull :body-params)
+       impl/with-format
+       impl/with-exception
+       impl/async-wrapper)))
 
 (defn remote-pull
   "Remotely pull a server."

@@ -54,6 +54,13 @@
         {:status 500
          :body (str ex)}))))
 
+(defn async-wrapper
+  [handler]
+  (fn ([req]
+       (handler req))
+    ([req respond raise]
+     (respond ((async-wrapper handler) req)))))
+
 ;;================
 ;; Client
 
@@ -77,11 +84,22 @@
     (-> (pr-str output)
         (bs/to-input-stream)))
   (-decode
-   [_ input]
-   (-> input
-       bs/to-reader
-       (java.io.PushbackReader.)
-       edn/read)))
+    [_ input]
+    (-> input
+        bs/to-reader
+        (java.io.PushbackReader.)
+        edn/read)))
+
+(defrecord SseFormatter []
+  Formatter
+  (-encode
+    [- output]
+    (-> (pr-str output)
+        (bs/to-input-stream)))
+  (-decode
+    [_ input]
+    (-> input
+        (bs/to-input-stream))))
 
 (defrecord TransitFormatter [type]
   Formatter
@@ -92,11 +110,11 @@
       (transit/write writer content)
       (bs/to-input-stream (.toByteArray out))))
   (-decode
-   [_ content]
-   (-> content
-       bs/to-input-stream
-       (transit/reader type)
-       (transit/read))))
+    [_ content]
+    (-> content
+        bs/to-input-stream
+        (transit/reader type)
+        (transit/read))))
 
 ;;=============================
 ;; Factory to create formatter
@@ -104,6 +122,10 @@
 (defmethod create-formatter "application/edn"
   [_]
   (EdnFormatter.))
+
+(defmethod create-formatter "text/event-stream"
+  [_]
+  (SseFormatter.))
 
 (defmethod create-formatter "application/transit+json"
   [_]
