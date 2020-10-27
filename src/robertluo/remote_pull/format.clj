@@ -90,17 +90,6 @@
         (java.io.PushbackReader.)
         edn/read)))
 
-(defrecord SseFormatter []
-  Formatter
-  (-encode
-    [- output]
-    (-> (pr-str output)
-        (bs/to-input-stream)))
-  (-decode
-    [_ input]
-    (-> input
-        (bs/to-input-stream))))
-
 (defrecord TransitFormatter [type]
   Formatter
   (-encode
@@ -115,6 +104,17 @@
         bs/to-input-stream
         (transit/reader type)
         (transit/read))))
+
+(defrecord SseFormatter []
+  Formatter
+  (-encode
+    [_ output]
+    (-> (pr-str output)
+        (bs/to-input-stream)))
+  (-decode
+    [_ input]
+    ;; should extend StreamableResponseBody
+    input))
 
 ;;=============================
 ;; Factory to create formatter

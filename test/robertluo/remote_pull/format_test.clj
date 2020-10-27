@@ -1,7 +1,9 @@
 (ns robertluo.remote-pull.format-test
   (:require
+   [byte-streams :as bs]
    [robertluo.remote-pull.format :as sut]
-   [clojure.test :refer [deftest is testing]]))
+   [clojure.test :refer [deftest is testing]]
+   [clojure.edn :as edn]))
 
 (deftest decode
   (testing "delegate to format"
@@ -54,10 +56,13 @@
 
 (deftest round-trip
   (let [edn          (sut/->EdnFormatter)
+        sse-event    (sut/->SseFormatter)
         transit-json (sut/->TransitFormatter :msgpack)
         data         '(:transact :with [[[:user/user-reg "foo" "secret" {}]
                                          [:finance/deposite "foo" 2000]]])]
     (testing "Edn round trip"
       (is (= data (->> data (sut/-encode edn) (sut/-decode edn)))))
+    (testing "SSE round trip (Edn encoding - input-stream decoding)"
+      (is (= data (->> data (sut/-encode sse-event) (sut/-decode sse-event) slurp edn/read-string))))
     (testing "transit json round trip"
       (is (= data (->> data (sut/-encode transit-json) (sut/-decode transit-json)))))))
