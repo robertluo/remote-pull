@@ -8,8 +8,8 @@
     1. pull on the model-maker
     1. encode/decode format
     1. handle with exception
-   
-   model-maker is a function takes ring request as its argument, 
+
+   model-maker is a function takes ring request as its argument,
    returns a map as pullable model."
   [model-maker]
   (-> model-maker

@@ -1,6 +1,6 @@
 (ns robertluo.remote-pull.format
   (:require
-   [robertluo.pullable :refer [pull]]
+   [robertluo.pullable :as pull]
    [clojure.edn :as edn]
    [byte-streams :as bs]
    [cognitect.transit :as transit]))
@@ -39,7 +39,7 @@
     (if-let [pattern (pattern-extractor req)]
       (let [model (model-maker req)]
         {:status 200
-         :body   (pull model pattern)})
+         :body   (pull/run pattern model)})
       (throw (ex-info "No pattern" {:req req})))))
 
 (defn with-exception
