@@ -18,8 +18,8 @@
 (deftest with-pull
   (let [handler (sut/with-pull (constantly {:foo "bar"}) :body-params)]
     (testing "pull with pattern returns result"
-      (is (= {:status 200 :body {:foo "bar"}}
-             (handler {:body-params :foo}))))
+      (is (= {:status 200 :body [{:foo "bar"} {'?foo "bar"}]}
+             (handler {:body-params '{:foo ?foo}}))))
     (testing "if no pattern, throw exception"
       (is (thrown? clojure.lang.ExceptionInfo (handler {}))))))
 
@@ -38,7 +38,7 @@
   (testing "when remote returns 200, return its body decoded"
     (is (= :ok
            (sut/remote-pull (constantly {:status 200 :body ":ok"})
-                            {:foo "bar"} "application/edn"))))
+                            '{:foo "bar"} "application/edn"))))
   (testing "when remote returns status other than 200, raises exception"
     (is (thrown? clojure.lang.ExceptionInfo
                  (sut/remote-pull (constantly {:status 400 :body ":ok"})
