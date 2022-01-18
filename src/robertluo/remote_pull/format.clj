@@ -40,10 +40,7 @@
       (let [model (model-maker req)
             data  (pull/run pattern model)]
         {:status 200
-         :body   (cond
-                   (= :data-only opt) (first data)
-                   (= :var-only opt)  (second data)
-                   :else              data)})
+         :body   ((case opt :data-only first :var-only second identity) data)})
       (throw (ex-info "No pattern" {:req req})))))
 
 (defn with-exception
