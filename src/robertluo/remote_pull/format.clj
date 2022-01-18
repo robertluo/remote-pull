@@ -36,10 +36,11 @@
 (defn with-pull
   [model-maker pattern-extractor]
   (fn [req]
-    (if-let [pattern (pattern-extractor req)]
-      (let [model (model-maker req)]
+    (if-let [{:keys [pattern opt]} (pattern-extractor req)]
+      (let [model (model-maker req)
+            data  (pull/run pattern model)]
         {:status 200
-         :body   (pull/run pattern model)})
+         :body   ((case opt :data-only first :var-only second identity) data)})
       (throw (ex-info "No pattern" {:req req})))))
 
 (defn with-exception
@@ -49,19 +50,21 @@
       (handler req)
       (catch clojure.lang.ExceptionInfo ex
         {:status 400
-         :body (str (assoc (ex-data ex) :message (ex-message ex)))})
+         :body   (str (assoc (ex-data ex) :message (ex-message ex)))})
       (catch Exception ex
         {:status 500
-         :body (str ex)}))))
+         :body   (str ex)}))))
 
 ;;================
 ;; Client
 
 (defn remote-pull
-  [post-fn pattern content-type]
+  [post-fn pattern opt content-type]
   (let [headers   {:headers {"content-type" content-type}}
         formatter (create-formatter headers)
-        resp      (post-fn (merge headers {:body (-encode formatter pattern)}))
+        resp      (post-fn
+                   (merge headers
+                          {:body (-encode formatter {:pattern pattern :opt opt})}))
         status    (:status resp)]
     (if (= status 200)
       (some->> (:body resp) (-decode formatter))
