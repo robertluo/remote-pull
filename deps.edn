@@ -1,9 +1,6 @@
 {:paths ["src"]
  :deps
- {robertluo/pullable
-  {:git/url "https://github.com/robertluo/pullable.git"
-   :tag     "v0.3.114"
-   :sha     "cf199e9cfff2df478c4e36c805b0db5261719f46"}
+ {robertluo/pullable           {:mvn/version "0.3.114"}
   org.clj-commons/byte-streams {:mvn/version "0.2.10"}
   com.cognitect/transit-clj    {:mvn/version "1.0.324"}}
  :aliases
@@ -11,8 +8,8 @@
   {:extra-paths ["test"]}
   :test
   {:extra-deps
-   {lambdaisland/kaocha           {:mvn/version "1.0.632"}
-    lambdaisland/kaocha-cloverage {:mvn/version "1.0-45"}}
+   {lambdaisland/kaocha           {:mvn/version "1.60.977"}
+    lambdaisland/kaocha-cloverage {:mvn/version "1.0.75"}}
    :main-opts ["-m" "kaocha.runner"]}
   :build
   {:deps       {io.github.seancorfield/build-clj
