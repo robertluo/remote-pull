@@ -16,10 +16,17 @@
                 ((juxt :body-params #(sut/-decode (sut/->EdnFormatter) (:body %)))))))))
 
 (deftest with-pull
-  (let [handler (sut/with-pull (constantly {:foo "bar"}) :body-params)]
-    (testing "pull with pattern returns result"
+  (let [handler     (sut/with-pull (constantly {:foo "bar"}) :body-params)
+        body-params {:pattern '{:foo ?foo}}]
+    (testing "pattern and pattern-opt :data-only are provided"
+      (is (= {:status 200 :body {:foo "bar"}}
+             (handler {:body-params (assoc body-params :opt :data-only)}))))
+    (testing "pattern and pattern-opt :var-only is provided"
+      (is (= {:status 200 :body {'?foo "bar"}}
+             (handler {:body-params (assoc body-params :opt :var-only)}))))
+    (testing "only pattern is provided"
       (is (= {:status 200 :body [{:foo "bar"} {'?foo "bar"}]}
-             (handler {:body-params '{:foo ?foo}}))))
+             (handler {:body-params body-params}))))
     (testing "if no pattern, throw exception"
       (is (thrown? clojure.lang.ExceptionInfo (handler {}))))))
 
@@ -38,11 +45,11 @@
   (testing "when remote returns 200, return its body decoded"
     (is (= :ok
            (sut/remote-pull (constantly {:status 200 :body ":ok"})
-                            '{:foo "bar"} "application/edn"))))
+                            'PATTERN 'OPT "application/edn"))))
   (testing "when remote returns status other than 200, raises exception"
     (is (thrown? clojure.lang.ExceptionInfo
                  (sut/remote-pull (constantly {:status 400 :body ":ok"})
-                                  {:foo "bar"} "application/edn")))))
+                                  'PATTERN 'OPT "application/edn")))))
 
 (deftest round-trip
   (let [edn          (sut/->EdnFormatter)
