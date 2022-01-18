@@ -1,2 +1,7 @@
-.nrepl-*
 .cpcache/
+.nrepl-*
+target/
+.rebel*
+.clj-kondo/
+.lsp/
+.calva/

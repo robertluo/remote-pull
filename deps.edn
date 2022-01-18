@@ -1,4 +1,5 @@
-{:deps
+{:paths ["src"]
+ :deps
  {robertluo/pullable
   {:git/url "https://github.com/robertluo/pullable.git"
    :tag     "v0.3.114"
@@ -12,4 +13,8 @@
   {:extra-deps
    {lambdaisland/kaocha           {:mvn/version "1.0.632"}
     lambdaisland/kaocha-cloverage {:mvn/version "1.0-45"}}
-   :main-opts ["-m" "kaocha.runner"]}}}
+   :main-opts ["-m" "kaocha.runner"]}
+  :build
+  {:deps       {io.github.seancorfield/build-clj
+                {:git/tag "v0.6.7" :git/sha "22c2d09"}}
+   :ns-default build}}}
