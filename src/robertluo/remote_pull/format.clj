@@ -3,7 +3,10 @@
    [robertluo.pullable :as pull]
    [clojure.edn :as edn]
    [byte-streams :as bs]
-   [cognitect.transit :as transit]))
+   [manifold.stream :as s]
+   [cognitect.transit :as transit]
+   [clojure.core.async :as async])
+  (:import [clojure.core.async.impl.channels ManyToManyChannel]))
 
 (defprotocol Formatter
   (-encode
@@ -33,14 +36,42 @@
       (-> (handler req)
           (update :body #(-encode formatter %))))))
 
+(defn with-format-sse
+  [handler ch-out]
+  (fn [req]
+    (let [formatter (create-formatter req)
+          req       (assoc req :body-params (some->> (:body req)
+                                                     (decode formatter)))]
+      (-> (handler req)
+          (assoc :body (-encode formatter ch-out))))))
+
+(defn pull-model
+  [model pattern opt]
+  (let [data (pull/run pattern model)]
+    ((case opt :data-only first :var-only second identity) data)))
+
 (defn with-pull
   [model-maker pattern-extractor]
   (fn [req]
     (if-let [{:keys [pattern opt]} (pattern-extractor req)]
-      (let [model (model-maker req)
-            data  (pull/run pattern model)]
+      (let [model (model-maker req)]
         {:status 200
-         :body   ((case opt :data-only first :var-only second identity) data)})
+         :body   (pull-model model pattern opt)})
+      (throw (ex-info "No pattern" {:req req})))))
+
+(defn with-pull-sse
+  [model-maker pattern-extractor ch-out]
+  (fn [req]
+    (if-let [{:keys [pattern opt]} (pattern-extractor req)]
+      (let [a-model (model-maker req)
+            data    (pull-model @a-model pattern opt)]
+        (add-watch a-model ::sse (fn [_ _ _ new-v]
+                                   (if new-v
+                                     (let [data (pull-model new-v pattern opt)]
+                                       (async/put! ch-out data))
+                                     (async/close! ch-out))))
+        (async/put! ch-out data)
+        {:status 200})
       (throw (ex-info "No pattern" {:req req})))))
 
 (defn with-exception
@@ -101,6 +132,23 @@
        (transit/reader type)
        (transit/read))))
 
+(defrecord SseFormatter []
+  Formatter
+  (-encode
+    [_ content]
+    (if (instance? ManyToManyChannel content)
+      (s/map pr-str content)
+      (-> (pr-str content)
+          (bs/to-input-stream))))
+  (-decode
+    [_ content]
+    (if (s/stream? content)
+      (s/map edn/read-string content)
+      (-> content
+          bs/to-reader
+          (java.io.PushbackReader.)
+          edn/read))))
+
 ;;=============================
 ;; Factory to create formatter
 
@@ -119,3 +167,7 @@
 (defmethod create-formatter "application/transit+msgpack"
   [_]
   (TransitFormatter. :msgpack))
+
+(defmethod create-formatter "text/event-stream"
+  [_]
+  (SseFormatter.))

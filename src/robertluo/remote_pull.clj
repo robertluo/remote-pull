@@ -1,7 +1,8 @@
 (ns robertluo.remote-pull
   "Remotely pull server and client"
   (:require
-   [robertluo.remote-pull.format :as impl]))
+   [robertluo.remote-pull.format :as impl]
+   [clojure.core.async :as async]))
 
 (defn model->handler
   "Returns a ring handler that will:
@@ -16,6 +17,14 @@
       (impl/with-pull :body-params)
       impl/with-format
       impl/with-exception))
+
+(defn model->sse-handler
+  [model-maker]
+  (let [ch-out (async/chan)]
+    (-> model-maker
+        (impl/with-pull-sse :body-params ch-out)
+        (impl/with-format-sse ch-out)
+        impl/with-exception)))
 
 (defn remote-pull
   "Pull the requested data from a server using:
