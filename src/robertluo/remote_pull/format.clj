@@ -6,7 +6,8 @@
    [manifold.stream :as s]
    [cognitect.transit :as transit]
    [clojure.core.async :as async]
-   [malli.core :as m])
+   [malli.core :as m]
+   [malli.error :as me])
   (:import [clojure.core.async.impl.channels ManyToManyChannel]))
 
 ;;; ---------- FORMAT ----------
@@ -64,11 +65,15 @@
 (defn with-schema
   [handler schemas]
   (fn [req]
-    (let [resp (handler req)]
+    (let [resp (handler req)
+          data (->> resp :body first)]
       (if-let [schema (get schemas (-> req :body-params :schema))]
-        (if (->> resp :body first (m/validate schema))
+        (if ((m/validator schema) data)
           resp
-          (throw (ex-info "Schema invalid" {:req req})))
+          (throw
+           (ex-info "Does not respect schema"
+                    {:req   req
+                     :error (-> schema (m/explain data) me/humanize)})))
         resp))))
 
 (defn with-opt
