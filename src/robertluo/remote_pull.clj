@@ -13,12 +13,12 @@
     5. handle with exception
 
    `model-maker`: function that takes a ring request as its argument, returns a map as pullable model.
-   `schemas`    : optional map of Malli schemas to validate the pulled data."
+   `all-schemas`: optional map of Malli schemas to validate the pulled data."
   ([model-maker]
    (model->handler model-maker nil))
-  ([model-maker schemas]
+  ([model-maker all-schemas]
    (-> model-maker
-       (impl/with-pull schemas)
+       (impl/with-pull all-schemas)
        impl/with-format
        impl/with-exception)))
 
@@ -27,11 +27,11 @@
     6. supports SSE via core async chans and manifold stream."
   ([model-maker]
    (model->sse-handler model-maker nil))
-  ([model-maker schemas]
+  ([model-maker all-schemas]
    (let [ch-out (async/chan)]
      (-> model-maker
-         (impl/with-pull schemas)
-         (impl/with-sse model-maker schemas ch-out)
+         (impl/with-pull all-schemas)
+         (impl/with-sse model-maker all-schemas ch-out)
          (impl/with-format-sse ch-out)
          impl/with-exception))))
 

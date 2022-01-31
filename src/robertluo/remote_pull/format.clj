@@ -63,18 +63,18 @@
       (throw (ex-info "No pattern" {:req req})))))
 
 (defn with-schema
-  [handler schemas]
+  [handler all-schemas]
   (fn [req]
-    (let [resp (handler req)
-          data (->> resp :body first)]
-      (if-let [schema (get schemas (-> req :body-params :schema))]
-        (if ((m/validator schema) data)
+    (if-let [schema (get all-schemas (-> req :body-params :schema))]
+      (let [validator (m/validator schema)
+            resp      (handler req)
+            data      (->> resp :body first)]
+        (if (validator data)
           resp
           (throw
-           (ex-info "Does not respect schema"
-                    {:req   req
-                     :error (-> schema (m/explain data) me/humanize)})))
-        resp))))
+           (let [err (m/explain schema data)]
+             (ex-info (str (me/humanize err)) {:req req :error err})))))
+      (handler req))))
 
 (defn with-opt
   [handler]
