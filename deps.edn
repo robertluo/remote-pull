@@ -4,7 +4,8 @@
   org.clj-commons/byte-streams {:mvn/version "0.2.10"}
   com.cognitect/transit-clj    {:mvn/version "1.0.324"}
   manifold/manifold            {:mvn/version "0.2.3"}
-  org.clojure/core.async       {:mvn/version "1.5.648"}}
+  org.clojure/core.async       {:mvn/version "1.5.648"}
+  metosin/malli                {:mvn/version "0.8.0"}}
  :aliases
  {:dev
   {:extra-paths ["test"]}
