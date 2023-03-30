@@ -3,24 +3,21 @@
   (:require [clojure.tools.build.api :as b]
             [org.corfield.build :as cb]))
 
-(def lib 'robertluo/remote-pull)
-(def version (format "0.1.%s" (b/git-count-revs nil)))
-(def url "https://github.com/robertluo/remote-pull")
+(defn project
+  [opts]
+  (-> {:lib     'io.github.robertluo/lasagna-QL
+       :version (format "0.3.%s" (b/git-count-revs nil))
+       :scm     "https://github.com/robertluo/remote-pull"}
+      (merge opts)))
 
 (defn tests
   [opts]
-  (cb/run-tests opts))
+  (-> opts (project) (cb/run-tests)))
 
 (defn ci
   [opts]
-  (-> opts
-      (assoc :lib lib :version version)
-      (cb/clean)
-      (cb/run-tests)
-      (cb/jar)))
+  (-> opts (project) (cb/clean) tests (cb/jar)))
 
 (defn deploy
   [opts]
-  (-> opts
-      (assoc :lib lib :version version)
-      (cb/deploy)))
+  (-> opts (project) (cb/deploy)))
