@@ -11,14 +11,14 @@ jobs:
     runs-on: ubuntu-latest
 
     steps:
-    - uses: actions/checkout@v3
+    - uses: actions/checkout@v4.2.1
 
-    - uses: DeLaGuardo/setup-clojure@10.2
+    - uses: DeLaGuardo/setup-clojure@12.5
       with:
-        cli: '1.11.1.1262'
-    - uses: actions/cache@v2
+        cli: '1.12.0.1479'
+    - uses: actions/cache@v4.1.1
       with:
         path: ~/.m2
         key: default-build
-    - run: clojure -T:build ci
-    - uses: codecov/codecov-action@v3.1.1
+    - run: clojure -X:dev:test
+    - uses: codecov/codecov-action@v4.6.0
