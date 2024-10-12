@@ -1,6 +1,6 @@
 (ns robertluo.remote-pull.format
   (:require
-   [robertluo.pullable :as pull]
+   [sg.flybot.pullable :as pull]
    [clojure.edn :as edn]
    [byte-streams :as bs]
    [manifold.stream :as s]
@@ -56,11 +56,26 @@
   [model-maker]
   (fn [req]
     (if-let [pattern (-> req :body-params :pattern)]
-      (let [model (model-maker req)]
+      (let [query-fn (pull/query pattern)
+            model (model-maker req)]
         {:status 200
-         :body   (pull/run pattern
-                   (if (instance? clojure.lang.Atom model) @model model))})
+         :body   (query-fn (if (instance? clojure.lang.Atom model) @model model))})
       (throw (ex-info "No pattern" {:req req})))))
+
+^:rct/test
+(comment
+  ((with-pattern (constantly {:deps {:paths ["src"]}}))
+   {:body-params {:pattern '{:deps {:paths ?global}}}})
+  ;; => {:status 200, :body {?global ["src"], &? {:deps {:paths ["src"]}}}}
+  )
+
+(defn- data-only
+  [result]
+  (get result '&?))
+
+(defn- var-only
+  [result]
+  (dissoc result '&?))
 
 (defn with-schema
   [handler all-schemas]
@@ -68,7 +83,7 @@
     (if-let [schema (get all-schemas (-> req :body-params :schema))]
       (let [validator (m/validator schema)
             resp      (handler req)
-            data      (->> resp :body first)]
+            data      (->> resp :body data-only)]
         (if (validator data)
           resp
           (throw
@@ -76,15 +91,44 @@
              (ex-info (str (me/humanize err)) {:req req :error err})))))
       (handler req))))
 
+^:rct/test
+(comment
+  (def test-schema-handler (with-schema (constantly {:body '{?global ["src"]
+                                                             &?      {:deps {:paths ["src"]}}}})
+                             {:path [:map [:deps :map]]}))
+  ;; do not need to validate
+  (test-schema-handler {:body-params {}}) ;; => {:body {?global ["src"], &? {:deps {:paths ["src"]}}}}
+
+  ;; validate ok, return response
+  (test-schema-handler {:body-params {:schema :path}}) ;; => {:body {?global ["src"], &? {:deps {:paths ["src"]}}}}
+
+  ;; validate fail, throw ex
+  ((with-schema (constantly {:body '{?global ["src"], &? {:deps {:paths ["src"]}}}})
+     {:path [:map [:deps :string]]})
+   {:body-params {:schema :path}})
+  ;; throws=>>
+  #:error{:class   clojure.lang.ExceptionInfo
+          :data    map?
+          :message #"should be a string"})
+
 (defn with-opt
   [handler]
   (fn [req]
-    (let [opt (-> req :body-params :opt)]
+    (let [opt (-> req :body-params :opt)
+          transform (case opt
+                      :data-only data-only
+                      :var-only  var-only
+                      identity)]
       (-> (handler req)
-          (update :body #((case opt
-                            :data-only first
-                            :var-only  second
-                            identity) %))))))
+          (update :body transform)))))
+
+^:rct/test
+(comment
+  (def test-opt-handler (with-opt (constantly {:body '{?global ["src"], &? {:deps {:paths ["src"]}}}})))
+  (test-opt-handler {:body-params {}}) ;; => {:body {?global ["src"], &? {:deps {:paths ["src"]}}}}
+  (test-opt-handler {:body-params {:opt :data-only}}) ;; => {:body {:deps {:paths ["src"]}}}
+  (test-opt-handler {:body-params {:opt :var-only}}) ;; => {:body {?global ["src"]}}
+  )
 
 (defn with-pull
   [model-maker schemas]
